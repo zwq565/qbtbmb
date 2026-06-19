@@ -20,11 +20,11 @@ class AutoSign(_PluginBase):
     """自动签到插件主类"""
 
     # 插件名称
-    plugin_name = "自动签到 v1.0.2"
+    plugin_name = "自动签到 v1.0.3"
     # 插件描述
     plugin_desc = "自动签到贴吧和微博超话，支持定时任务和结果通知"
     # 插件版本
-    plugin_version = "1.0.2"
+    plugin_version = "1.0.3"
     # 插件作者
     plugin_author = "MoviePilot Community"
     # 插件图标
@@ -157,23 +157,43 @@ class AutoSign(_PluginBase):
         定时任务循环
         """
         sign_time = self.plugin_config.get("sign_time", "08:00")
+        now = datetime.now()
+        logger.info(f"[{self.plugin_name}] 当前时间: {now.strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"[{self.plugin_name}] 每日签到时间: {sign_time}")
+
+        # 解析签到时间
+        try:
+            sign_hour, sign_minute = map(int, sign_time.split(":"))
+        except Exception:
+            sign_hour, sign_minute = 8, 0
+            logger.warning(f"[{self.plugin_name}] 时间格式错误，使用默认 08:00")
 
         while not self._stop_event.is_set():
             try:
                 now = datetime.now()
-                current_time = now.strftime("%H:%M")
+                current_hour = now.hour
+                current_minute = now.minute
 
-                # 检查是否到了签到时间
-                if current_time == sign_time:
+                # 判断是否到了签到时间（宽松判断：当前时间 >= 签到时间，且今天还没签到过）
+                should_sign = False
+                if current_hour > sign_hour:
+                    should_sign = True
+                elif current_hour == sign_hour and current_minute >= sign_minute:
+                    should_sign = True
+
+                if should_sign:
                     # 检查今天是否已经签到过
                     if (
                         self._last_sign_time is None
                         or self._last_sign_time.date() != now.date()
                     ):
                         logger.info(f"[{self.plugin_name}] 到达签到时间，开始执行签到")
-                        self._do_sign()
-                        self._last_sign_time = now
+                        try:
+                            self._do_sign()
+                            self._last_sign_time = now
+                            logger.info(f"[{self.plugin_name}] 签到完成")
+                        except Exception as e:
+                            logger.error(f"[{self.plugin_name}] 签到执行失败: {str(e)}")
 
                 # 每分钟检查一次
                 time.sleep(60)
