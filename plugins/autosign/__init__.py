@@ -471,14 +471,14 @@ class AutoSign(_PluginBase):
                 "props": {"title": "基础设置"},
                 "children": [
                     {
-                        "component": "VSwitch",
+                        "component": "v-switch",
                         "props": {
                             "label": "启用插件",
                             "model": "enable",
                         },
                     },
                     {
-                        "component": "VTextField",
+                        "component": "v-text-field",
                         "props": {
                             "label": "每日签到时间",
                             "model": "sign_time",
@@ -497,14 +497,14 @@ class AutoSign(_PluginBase):
                 "props": {"title": "贴吧签到设置"},
                 "children": [
                     {
-                        "component": "VSwitch",
+                        "component": "v-switch",
                         "props": {
                             "label": "启用贴吧签到",
                             "model": "tieba_enable",
                         },
                     },
                     {
-                        "component": "VTextField",
+                        "component": "v-text-field",
                         "props": {
                             "label": "BDUSS",
                             "model": "tieba_bduss",
@@ -514,7 +514,7 @@ class AutoSign(_PluginBase):
                         },
                     },
                     {
-                        "component": "VTextField",
+                        "component": "v-text-field",
                         "props": {
                             "label": "STOKEN（可选）",
                             "model": "tieba_stoken",
@@ -524,7 +524,7 @@ class AutoSign(_PluginBase):
                         },
                     },
                     {
-                        "component": "VSwitch",
+                        "component": "v-switch",
                         "props": {
                             "label": "优先使用一键签到",
                             "model": "tieba_use_onekey",
@@ -532,7 +532,7 @@ class AutoSign(_PluginBase):
                         },
                     },
                     {
-                        "component": "VTextField",
+                        "component": "v-text-field",
                         "props": {
                             "label": "签到间隔（秒）",
                             "model": "tieba_delay",
@@ -551,14 +551,14 @@ class AutoSign(_PluginBase):
                 "props": {"title": "微博超话签到设置"},
                 "children": [
                     {
-                        "component": "VSwitch",
+                        "component": "v-switch",
                         "props": {
                             "label": "启用微博超话签到",
                             "model": "weibo_enable",
                         },
                     },
                     {
-                        "component": "VTextarea",
+                        "component": "v-textarea",
                         "props": {
                             "label": "微博 Cookie",
                             "model": "weibo_cookie",
@@ -568,7 +568,7 @@ class AutoSign(_PluginBase):
                         },
                     },
                     {
-                        "component": "VTextField",
+                        "component": "v-text-field",
                         "props": {
                             "label": "签到间隔（秒）",
                             "model": "weibo_delay",
@@ -587,14 +587,14 @@ class AutoSign(_PluginBase):
                 "props": {"title": "通知设置"},
                 "children": [
                     {
-                        "component": "VSwitch",
+                        "component": "v-switch",
                         "props": {
                             "label": "启用签到结果通知",
                             "model": "notify_enable",
                         },
                     },
                     {
-                        "component": "VSwitch",
+                        "component": "v-switch",
                         "props": {
                             "label": "仅失败时通知",
                             "model": "notify_only_fail",
