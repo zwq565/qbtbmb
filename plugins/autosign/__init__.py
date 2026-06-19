@@ -461,149 +461,63 @@ class AutoSign(_PluginBase):
         配置表单
         :return: (表单配置, 默认值)
         """
-        # 构建表单配置
-        form = []
-
-        # 基础设置
-        form.append(
+        # 简化版：直接平铺组件，不用 VCard 分组
+        form = [
             {
-                "component": "VCard",
-                "props": {"title": "基础设置"},
-                "children": [
-                    {
-                        "component": "v-switch",
-                        "props": {
-                            "label": "启用插件",
-                            "model": "enable",
-                        },
-                    },
-                    {
-                        "component": "v-text-field",
-                        "props": {
-                            "label": "每日签到时间",
-                            "model": "sign_time",
-                            "placeholder": "08:00",
-                            "hint": "24小时制，例如 08:00",
-                        },
-                    },
-                ],
-            }
-        )
-
-        # 贴吧设置
-        form.append(
+                "component": "v-switch",
+                "props": {
+                    "label": "启用插件",
+                    "model": "enable",
+                },
+            },
             {
-                "component": "VCard",
-                "props": {"title": "贴吧签到设置"},
-                "children": [
-                    {
-                        "component": "v-switch",
-                        "props": {
-                            "label": "启用贴吧签到",
-                            "model": "tieba_enable",
-                        },
-                    },
-                    {
-                        "component": "v-text-field",
-                        "props": {
-                            "label": "BDUSS",
-                            "model": "tieba_bduss",
-                            "placeholder": "请输入百度 BDUSS",
-                            "type": "password",
-                            "hint": "从浏览器 Cookie 中获取 BDUSS 值",
-                        },
-                    },
-                    {
-                        "component": "v-text-field",
-                        "props": {
-                            "label": "STOKEN（可选）",
-                            "model": "tieba_stoken",
-                            "placeholder": "请输入百度 STOKEN",
-                            "type": "password",
-                            "hint": "从浏览器 Cookie 中获取 STOKEN 值（可选）",
-                        },
-                    },
-                    {
-                        "component": "v-switch",
-                        "props": {
-                            "label": "优先使用一键签到",
-                            "model": "tieba_use_onekey",
-                            "hint": "优先使用贴吧一键签到功能（VIP功能，7级以上贴吧）",
-                        },
-                    },
-                    {
-                        "component": "v-text-field",
-                        "props": {
-                            "label": "签到间隔（秒）",
-                            "model": "tieba_delay",
-                            "type": "number",
-                            "hint": "每个贴吧签到之间的延迟，默认 1.5 秒",
-                        },
-                    },
-                ],
-            }
-        )
-
-        # 微博设置
-        form.append(
+                "component": "v-text-field",
+                "props": {
+                    "label": "每日签到时间",
+                    "model": "sign_time",
+                    "placeholder": "08:00",
+                },
+            },
             {
-                "component": "VCard",
-                "props": {"title": "微博超话签到设置"},
-                "children": [
-                    {
-                        "component": "v-switch",
-                        "props": {
-                            "label": "启用微博超话签到",
-                            "model": "weibo_enable",
-                        },
-                    },
-                    {
-                        "component": "v-textarea",
-                        "props": {
-                            "label": "微博 Cookie",
-                            "model": "weibo_cookie",
-                            "placeholder": "请输入微博完整 Cookie",
-                            "rows": 4,
-                            "hint": "从浏览器中复制完整的微博 Cookie",
-                        },
-                    },
-                    {
-                        "component": "v-text-field",
-                        "props": {
-                            "label": "签到间隔（秒）",
-                            "model": "weibo_delay",
-                            "type": "number",
-                            "hint": "每个超话签到之间的延迟，默认 2 秒",
-                        },
-                    },
-                ],
-            }
-        )
-
-        # 通知设置
-        form.append(
+                "component": "v-switch",
+                "props": {
+                    "label": "启用贴吧签到",
+                    "model": "tieba_enable",
+                },
+            },
             {
-                "component": "VCard",
-                "props": {"title": "通知设置"},
-                "children": [
-                    {
-                        "component": "v-switch",
-                        "props": {
-                            "label": "启用签到结果通知",
-                            "model": "notify_enable",
-                        },
-                    },
-                    {
-                        "component": "v-switch",
-                        "props": {
-                            "label": "仅失败时通知",
-                            "model": "notify_only_fail",
-                            "hint": "只有签到失败时才发送通知",
-                        },
-                    },
-                ],
-            }
-        )
+                "component": "v-text-field",
+                "props": {
+                    "label": "贴吧 BDUSS",
+                    "model": "tieba_bduss",
+                    "placeholder": "请输入百度 BDUSS",
+                    "type": "password",
+                },
+            },
+            {
+                "component": "v-switch",
+                "props": {
+                    "label": "启用微博超话签到",
+                    "model": "weibo_enable",
+                },
+            },
+            {
+                "component": "v-textarea",
+                "props": {
+                    "label": "微博 Cookie",
+                    "model": "weibo_cookie",
+                    "placeholder": "请输入微博完整 Cookie",
+                    "rows": 3,
+                },
+            },
+            {
+                "component": "v-switch",
+                "props": {
+                    "label": "启用签到结果通知",
+                    "model": "notify_enable",
+                },
+            },
+        ]
 
         # 默认值
         defaults = {
