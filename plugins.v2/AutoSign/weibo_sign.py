@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 微博超话自动签到模块
+使用微博移动端 m.weibo.cn 接口
 """
 import requests
 import time
@@ -20,10 +21,12 @@ class WeiboSuperTopicSign:
         self.cookie = cookie.strip()
         self.session = requests.Session()
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Weibo (iPhone;9,3;Scale/3.00)",
-            "Referer": "https://weibo.com/",
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+            "Referer": "https://m.weibo.cn/",
             "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "zh-CN,zh;q=0.9",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "MWeibo-Pwa": "1",
+            "X-Requested-With": "XMLHttpRequest",
         }
         self.session.headers.update(self.headers)
         # 设置 Cookie
@@ -42,83 +45,88 @@ class WeiboSuperTopicSign:
                 cookies[key.strip()] = value.strip()
         self.session.cookies.update(cookies)
 
-    def _get_tbs(self) -> str:
-        """获取 tbs 参数"""
-        try:
-            url = "http://tieba.baidu.com/dc/common/tbs"
-            resp = self.session.get(url, timeout=10)
-            data = resp.json()
-            return data.get("tbs", "")
-        except Exception as e:
-            logger.error(f"获取微博 tbs 失败: {str(e)}")
-            return ""
-
     def get_followed_topics(self) -> List[Dict]:
         """
         获取关注的超话列表
-        :return: 超话列表 [{id, name, level, ...}]
+        :return: 超话列表 [{id, name, level, is_sign, ...}]
         """
         topics = []
         try:
-            # 使用移动端接口获取关注的超话
+            # 使用微博移动端接口获取关注的超话
+            since_id = ""
             page = 1
             while True:
-                url = f"https://weibo.com/p/aj/v6/mblog/mbloglist"
+                url = "https://m.weibo.cn/api/container/getIndex"
                 params = {
-                    "ajwvr": "6",
-                    "id": "100803_-_follow",
-                    "page": page,
-                    "pagebar": "0",
-                    "tab": "super_index",
-                    "pl_name": "Pl_Core_MixedFeed__24",
-                    "idflag": "2",
-                    "domain": "100803",
-                    "domain_op": "100803",
-                    "feed_type": "1",
-                    "pre_page": page,
-                    "end_id": "",
-                    "end_idcard": "",
-                    "end_mark": "",
-                    "start_id": "",
-                    "start_idcard": "",
-                    "start_mark": "",
-                    "yulu_video": "0",
-                    "feed_type_v": "feedlike",
-                    "is_qxkb": "0",
+                    "containerid": "100803_-_followsuper",
                 }
-                resp = self.session.get(url, params=params, timeout=10)
+                if since_id:
+                    params["since_id"] = since_id
+
+                resp = self.session.get(url, params=params, timeout=15)
+                # 打印响应内容用于调试
+                logger.debug(f"微博超话列表响应: {resp.text[:500]}")
+
                 data = resp.json()
 
-                if data.get("code") != "100000":
+                if data.get("ok") != 1:
+                    logger.warning(f"获取超话列表失败: {data.get('msg', '未知错误')}")
                     break
 
-                html = data.get("data", "")
-                if not html:
+                cards = data.get("data", {}).get("cards", [])
+                if not cards:
                     break
 
-                # 解析 HTML 提取超话信息
-                # 匹配超话ID和名称
-                pattern = r'href="https://weibo\.com/p/(\d+)/super_index"\s+title="([^"]+)"'
-                matches = re.findall(pattern, html)
+                # 解析卡片中的超话信息
+                for card in cards:
+                    card_group = card.get("card_group", [])
+                    for item in card_group:
+                        # 超话卡片
+                        if item.get("card_type") == "8":
+                            topic_id = item.get("itemid", "")
+                            topic_name = item.get("title_sub", "") or item.get("title_sub", "")
+                            # 从 scheme 中提取超话ID
+                            scheme = item.get("scheme", "")
+                            if not topic_id and "containerid=" in scheme:
+                                match = re.search(r"containerid=(\d+)", scheme)
+                                if match:
+                                    topic_id = match.group(1)
 
-                if not matches:
+                            # 检查签到状态
+                            is_sign = False
+                            btn_text = ""
+                            # 查找按钮
+                            buttons = item.get("buttons", [])
+                            for btn in buttons:
+                                btn_text = btn.get("title", "")
+                                if btn_text == "已签到":
+                                    is_sign = True
+                                elif btn_text == "签到":
+                                    is_sign = False
+
+                            if topic_id and topic_name:
+                                topics.append({
+                                    "id": topic_id,
+                                    "name": topic_name,
+                                    "is_sign": is_sign,
+                                    "btn_text": btn_text,
+                                    "scheme": scheme,
+                                })
+
+                # 获取下一页的 since_id
+                since_id = data.get("data", {}).get("cardlistInfo", {}).get("since_id", "")
+                if not since_id:
                     break
-
-                for topic_id, topic_name in matches:
-                    if topic_id and topic_name:
-                        topics.append({
-                            "id": topic_id,
-                            "name": topic_name,
-                        })
 
                 page += 1
                 if page > 10:  # 最多获取10页
                     break
-
                 time.sleep(1)
 
         except Exception as e:
             logger.error(f"获取微博超话列表失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
 
         # 去重
         seen = set()
@@ -139,43 +147,79 @@ class WeiboSuperTopicSign:
         :return: 签到结果 {success, msg, data}
         """
         try:
-            url = "https://weibo.com/p/aj/general/button"
+            # 先获取超话页面，找到签到按钮的 scheme
+            url = "https://m.weibo.cn/api/container/getIndex"
             params = {
-                "ajwvr": "6",
-                "api": "http://i.huati.weibo.com/aj/super/checkin",
-                "id": topic_id,
-                "location": "page_100808_super_index",
-                "timezone": "GMT+0800",
-                "lang": "zh-cn",
-                "plat": "MacIntel",
-                "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "screen": "2560*1440",
-                "__rnd": str(int(time.time() * 1000)),
+                "containerid": f"100808{topic_id}_-_super_index",
             }
+            resp = self.session.get(url, params=params, timeout=15)
+            data = resp.json()
 
-            resp = self.session.get(url, params=params, timeout=10)
-            result = resp.json()
+            if data.get("ok") != 1:
+                return {
+                    "success": False,
+                    "msg": f"获取超话信息失败: {data.get('msg', '未知错误')}",
+                    "data": data,
+                    "topic_name": topic_name,
+                    "topic_id": topic_id,
+                }
 
-            if result.get("code") == "100000":
-                data = result.get("data", {})
+            # 查找签到按钮
+            sign_scheme = ""
+            cards = data.get("data", {}).get("cards", [])
+            for card in cards:
+                card_group = card.get("card_group", [])
+                for item in card_group:
+                    buttons = item.get("buttons", [])
+                    for btn in buttons:
+                        if btn.get("title") == "签到":
+                            sign_scheme = btn.get("scheme", "")
+                            break
+                    if sign_scheme:
+                        break
+                if sign_scheme:
+                    break
+
+            if not sign_scheme:
+                # 可能已经签到了
                 return {
                     "success": True,
-                    "msg": data.get("msg", "签到成功"),
-                    "data": data,
+                    "msg": "已签到",
+                    "data": {},
+                    "topic_name": topic_name,
+                    "topic_id": topic_id,
+                }
+
+            # 执行签到
+            if sign_scheme.startswith("http"):
+                sign_url = sign_scheme
+            else:
+                sign_url = f"https://m.weibo.cn{sign_scheme}"
+
+            sign_resp = self.session.get(sign_url, timeout=15)
+            sign_data = sign_resp.json()
+
+            if sign_data.get("ok") == 1:
+                return {
+                    "success": True,
+                    "msg": "签到成功",
+                    "data": sign_data,
                     "topic_name": topic_name,
                     "topic_id": topic_id,
                 }
             else:
                 return {
                     "success": False,
-                    "msg": result.get("msg", "签到失败"),
-                    "data": result,
+                    "msg": sign_data.get("msg", "签到失败"),
+                    "data": sign_data,
                     "topic_name": topic_name,
                     "topic_id": topic_id,
                 }
 
         except Exception as e:
             logger.error(f"签到超话 {topic_name}({topic_id}) 失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 "success": False,
                 "msg": f"签到异常: {str(e)}",
@@ -192,20 +236,28 @@ class WeiboSuperTopicSign:
         """
         results = []
         topics = self.get_followed_topics()
-
         if not topics:
             logger.warning("未获取到关注的超话列表")
             return results
 
         logger.info(f"开始签到 {len(topics)} 个超话...")
-
         for i, topic in enumerate(topics, 1):
             logger.info(f"[{i}/{len(topics)}] 正在签到: {topic['name']}")
-            result = self.sign_topic(topic["id"], topic["name"])
-            results.append(result)
 
-            status = "✓" if result["success"] else "✗"
-            logger.info(f"  {status} {result['msg']}")
+            # 如果已经签到了，跳过
+            if topic.get("is_sign"):
+                logger.info(f"  ✓ 已签到，跳过")
+                results.append({
+                    "success": True,
+                    "msg": "已签到",
+                    "topic_name": topic["name"],
+                    "topic_id": topic["id"],
+                })
+            else:
+                result = self.sign_topic(topic["id"], topic["name"])
+                results.append(result)
+                status = "✓" if result["success"] else "✗"
+                logger.info(f"  {status} {result['msg']}")
 
             if i < len(topics):
                 time.sleep(delay)
@@ -214,7 +266,6 @@ class WeiboSuperTopicSign:
         success_count = sum(1 for r in results if r["success"])
         fail_count = len(results) - success_count
         logger.info(f"签到完成: 成功 {success_count} 个，失败 {fail_count} 个")
-
         return results
 
     def check_login(self) -> bool:
@@ -223,10 +274,10 @@ class WeiboSuperTopicSign:
         :return: True/False
         """
         try:
-            url = "https://weibo.com/ajax/profile/info"
+            url = "https://m.weibo.cn/api/config"
             resp = self.session.get(url, timeout=10)
             data = resp.json()
-            if data.get("ok") == 1:
+            if data.get("data", {}).get("login"):
                 return True
             return False
         except Exception as e:

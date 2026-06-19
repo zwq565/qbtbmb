@@ -20,11 +20,11 @@ class AutoSign(_PluginBase):
     """自动签到插件主类"""
 
     # 插件名称
-    plugin_name = "自动签到 v1.0.3"
+    plugin_name = "自动签到 v1.0.4"
     # 插件描述
     plugin_desc = "自动签到贴吧和微博超话，支持定时任务和结果通知"
     # 插件版本
-    plugin_version = "1.0.3"
+    plugin_version = "1.0.4"
     # 插件作者
     plugin_author = "MoviePilot Community"
     # 插件图标
