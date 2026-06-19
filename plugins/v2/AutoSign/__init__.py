@@ -24,7 +24,7 @@ class AutoSign(_PluginBase):
     # 插件描述
     plugin_desc = "自动签到贴吧和微博超话，支持定时任务和结果通知"
     # 插件版本
-    plugin_version = "1.0.0"
+    plugin_version = "1.0.1"
     # 插件作者
     plugin_author = "MoviePilot Community"
     # 插件图标
