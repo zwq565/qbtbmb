@@ -20,11 +20,11 @@ class AutoSign(_PluginBase):
     """自动签到插件主类"""
 
     # 插件名称
-    plugin_name = "自动签到 v1.0.5"
+    plugin_name = "自动签到 v1.0.6"
     # 插件描述
     plugin_desc = "自动签到贴吧和微博超话，支持定时任务和结果通知"
     # 插件版本
-    plugin_version = "1.0.5"
+    plugin_version = "1.0.6"
     # 插件作者
     plugin_author = "MoviePilot Community"
     # 插件图标
@@ -118,6 +118,7 @@ class AutoSign(_PluginBase):
     _stop_event = None
     _last_sign_time = None
     _last_sign_result = None
+    _first_run = True
 
     def init_plugin(self, config: dict = None):
         """
@@ -186,15 +187,18 @@ class AutoSign(_PluginBase):
                     should_sign = True
 
                 if should_sign:
-                    # 检查今天是否已经签到过
+                    # 第一次运行时，只要时间到了就签到（方便测试）
+                    # 之后按天判断，一天只签到一次
                     if (
-                        self._last_sign_time is None
+                        self._first_run
+                        or self._last_sign_time is None
                         or self._last_sign_time.date() != now.date()
                     ):
                         logger.info(f"[{self.plugin_name}] 到达签到时间({sign_time})，开始执行签到")
                         try:
                             self._do_sign()
                             self._last_sign_time = now
+                            self._first_run = False
                             logger.info(f"[{self.plugin_name}] 签到完成")
                         except Exception as e:
                             logger.error(f"[{self.plugin_name}] 签到执行失败: {str(e)}")
@@ -491,6 +495,20 @@ class AutoSign(_PluginBase):
         """
         # 简化版：直接平铺组件，不用 VCard 分组
         form = [
+            {
+                "component": "v-btn",
+                "props": {
+                    "label": "🚀 立即执行签到",
+                    "color": "primary",
+                    "block": True,
+                    "variant": "flat",
+                },
+                "action": {
+                    "api": "/sign_now",
+                    "method": "POST",
+                    "message": "签到任务已开始执行，请查看日志",
+                },
+            },
             {
                 "component": "v-switch",
                 "props": {
