@@ -1,0 +1,22 @@
+# 自动签到插件配置文件
+# 注意：建议通过 MoviePilot 后台界面配置，不要直接修改此文件
+
+# 基础设置
+enable: true
+sign_time: "08:00"
+
+# 贴吧签到设置
+tieba_enable: true
+tieba_bduss: ""
+tieba_stoken: ""
+tieba_use_onekey: true
+tieba_delay: 1.5
+
+# 微博超话签到设置
+weibo_enable: false
+weibo_cookie: ""
+weibo_delay: 2
+
+# 通知设置
+notify_enable: true
+notify_only_fail: false
