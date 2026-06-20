@@ -25,19 +25,21 @@ class WeiboSuperTopicSign:
         # 更完整的移动端请求头，模拟 iPhone Safari
         self.headers = {
             "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-            "Accept": "application/json, text/plain, */*",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "zh-CN,zh-Hans;q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
-            "Referer": "https://m.weibo.cn/",
-            "MWeibo-Pwa": "1",
-            "X-Requested-With": "XMLHttpRequest",
             "Connection": "keep-alive",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
         }
         self.session.headers.update(self.headers)
         self._set_cookie()
+
+        # 先访问主页，建立 session
+        self._visit_homepage()
 
     def _set_cookie(self):
         """设置 Cookie"""
@@ -55,6 +57,28 @@ class WeiboSuperTopicSign:
             logger.info(f"微博 Cookie 解析成功，共 {len(cookies)} 个字段")
         except Exception as e:
             logger.error(f"微博 Cookie 解析失败: {str(e)}")
+
+    def _visit_homepage(self):
+        """访问主页，建立 session"""
+        try:
+            url = "https://m.weibo.cn/"
+            resp = self.session.get(url, timeout=15, allow_redirects=True)
+            logger.info(f"访问微博主页成功，状态码: {resp.status_code}")
+            logger.debug(f"Cookie 数量: {len(self.session.cookies)}")
+        except Exception as e:
+            logger.warning(f"访问微博主页失败: {str(e)}")
+
+    def _get_api_headers(self) -> dict:
+        """获取 API 请求头"""
+        return {
+            "Accept": "application/json, text/plain, */*",
+            "MWeibo-Pwa": "1",
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://m.weibo.cn/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+        }
 
     def check_login(self) -> bool:
         """
@@ -91,7 +115,9 @@ class WeiboSuperTopicSign:
                     params["since_id"] = since_id
 
                 logger.debug(f"获取超话列表，第 {page} 页")
-                resp = self.session.get(url, params=params, timeout=15)
+                # 使用 API 专用请求头
+                api_headers = self._get_api_headers()
+                resp = self.session.get(url, params=params, headers=api_headers, timeout=15)
 
                 # 检查响应状态
                 if resp.status_code != 200:
