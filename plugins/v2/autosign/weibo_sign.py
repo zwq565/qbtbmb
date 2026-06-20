@@ -146,6 +146,15 @@ class WeiboSuperTopicSign:
                     break
 
                 cards = data.get("data", {}).get("cards", [])
+                # 调试：打印数据结构
+                if page == 1:
+                    logger.debug(f"第1页数据结构: cards数量={len(cards)}")
+                    for i, card in enumerate(cards):
+                        card_group = card.get("card_group", [])
+                        logger.debug(f"  card[{i}]: card_type={card.get('card_type')}, card_group数量={len(card_group)}")
+                        for j, item in enumerate(card_group[:3]):  # 只打印前3个
+                            logger.debug(f"    item[{j}]: card_type={item.get('card_type')}, title_sub={item.get('title_sub')}, itemid={item.get('itemid')}")
+
                 for card in cards:
                     card_group = card.get("card_group", [])
                     for item in card_group:
