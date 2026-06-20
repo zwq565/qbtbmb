@@ -20,11 +20,11 @@ class AutoSign(_PluginBase):
     """自动签到插件主类"""
 
     # 插件名称
-    plugin_name = "自动签到 v1.0.6"
+    plugin_name = "自动签到 v1.0.7"
     # 插件描述
     plugin_desc = "自动签到贴吧和微博超话，支持定时任务和结果通知"
     # 插件版本
-    plugin_version = "1.0.6"
+    plugin_version = "1.0.7"
     # 插件作者
     plugin_author = "MoviePilot Community"
     # 插件图标
@@ -279,6 +279,10 @@ class AutoSign(_PluginBase):
 
         results["end_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self._last_sign_result = results
+
+        # 保存签到结果到配置，方便用户通过「查看数据」查看
+        self.plugin_config["_last_result"] = results
+        self.plugin_config["_last_sign_time"] = results["start_time"]
 
         # 发送通知
         if self.plugin_config.get("notify_enable", True):
